@@ -1,0 +1,643 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>QFD House Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caladea:wght@400;700&family=Carlito:wght@400;700&display=swap">
+<style>
+/* Layout: navy band on top, a numbered four-step guide, then the house itself as one scrollable grid (roof above, matrix below), results under it. Palette follows the ULACIT system: navy, teal, gold, coral. */
+:root{
+  --bg:#F2F5F9; --surface:#FFFFFF; --ink:#0F1E3A; --muted:#55627B; --line:#D3DAE6;
+  --band:#0F2747; --band-ink:#FFFFFF;
+  --teal:#0E7C86; --gold:#E0A81C; --gold-ink:#1B1500; --coral:#D9482A;
+  --input:#FFF5D6; --callout:#E4F2F3; --callout-ink:#0F1E3A; --m9:#14808A; --m9-ink:#FFFFFF; --m3:#84C6CC; --m3-ink:#0F1E3A; --m1:#DCEFF1; --m1-ink:#0F1E3A;
+  --pos2:#14808A; --pos1:#A9DADF; --neg1:#F6B9A9; --neg2:#D9482A; --diamond-ink:#0F1E3A; --diamond-ink-strong:#FFFFFF;
+  --serif:Cambria,Caladea,Georgia,serif; --sans:Calibri,Carlito,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B1322; --surface:#121E34; --ink:#E7ECF5; --muted:#9DABC4; --line:#253452;
+    --band:#08101F; --band-ink:#FFFFFF;
+    --teal:#41B7C1; --gold:#E8B93C; --gold-ink:#1B1500; --coral:#F07A58;
+    --input:#2A2512; --callout:#10303A; --callout-ink:#E7ECF5; --m9:#1A8791; --m9-ink:#FFFFFF; --m3:#1F5F69; --m3-ink:#E7ECF5; --m1:#17414A; --m1-ink:#DDEBEE;
+    --pos2:#1A8791; --pos1:#1F5F69; --neg1:#7A3A2B; --neg2:#D9553A; --diamond-ink:#E7ECF5; --diamond-ink-strong:#FFFFFF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B1322; --surface:#121E34; --ink:#E7ECF5; --muted:#9DABC4; --line:#253452;
+  --band:#08101F; --band-ink:#FFFFFF;
+  --teal:#41B7C1; --gold:#E8B93C; --gold-ink:#1B1500; --coral:#F07A58;
+  --input:#2A2512; --callout:#10303A; --callout-ink:#E7ECF5; --m9:#1A8791; --m9-ink:#FFFFFF; --m3:#1F5F69; --m3-ink:#E7ECF5; --m1:#17414A; --m1-ink:#DDEBEE;
+  --pos2:#1A8791; --pos1:#1F5F69; --neg1:#7A3A2B; --neg2:#D9553A; --diamond-ink:#E7ECF5; --diamond-ink-strong:#FFFFFF;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--sans);margin:0}
+h1,h2,h3{font-family:var(--serif);margin:0;text-wrap:balance}
+button,select,textarea,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* top band */
+.band{background:var(--band);color:var(--band-ink);padding-block:16px}
+.band .wrap{display:flex;gap:16px 24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{display:flex;gap:14px;align-items:center;min-width:0}
+.brand svg{flex:none}
+.brand h1{font-size:1.6rem;line-height:1.1}
+.brand p{margin:2px 0 0;opacity:.8;font-size:.95rem;max-width:56ch}
+.lang{display:inline-flex;border:1px solid rgba(255,255,255,.35);border-radius:6px;overflow:hidden}
+.lang button{background:transparent;border:0;color:var(--band-ink);padding:6px 14px;cursor:pointer;font-weight:700;letter-spacing:.04em}
+.lang button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
+
+main{padding-block:20px 40px;display:grid;grid-template-columns:minmax(0,1fr);gap:20px}
+main>*{min-width:0}
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.steps li{display:flex;gap:10px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:.92rem}
+.steps li span small{display:block;color:var(--muted);font-weight:700}
+.steps b{flex:none;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--band);color:var(--band-ink);font-size:.85rem}
+@media (max-width:980px){.steps{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.steps{grid-template-columns:1fr}}
+
+.tools{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:flex-end}
+.field{display:grid;gap:4px;min-width:0}
+.field label,.lbl{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.field input[type=text],.field select{background:var(--input);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0}
+#name{width:min(420px,100%)}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 14px;cursor:pointer;font-weight:700}
+.btn:hover{border-color:var(--teal)}
+.btn.primary{background:var(--band);color:var(--band-ink);border-color:var(--band)}
+.btn[disabled]{opacity:.45;cursor:default}
+.chk{display:flex;gap:8px;align-items:center;padding:8px 0;cursor:pointer}
+.chk input{width:18px;height:18px;accent-color:var(--teal)}
+
+/* the house */
+.house{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+.scroll{overflow-x:auto;padding-bottom:6px}
+.inner{width:max-content;min-width:100%}
+.roofrow{display:flex;align-items:flex-end}
+.roofcap{width:306px;flex:none;padding:0 14px 4px 0;font-size:.85rem;color:var(--muted)}
+.roofcap b{display:block;color:var(--ink);font-family:var(--serif);font-size:1rem;margin-bottom:2px}
+.roofsvg{display:block;flex:none;overflow:visible}
+.diamond{cursor:pointer}
+.diamond polygon{stroke:var(--line);stroke-width:1}
+.diamond.empty polygon{fill:var(--surface);stroke-dasharray:3 3}
+.diamond.empty:hover polygon{stroke:var(--teal)}
+.diamond.pp polygon{fill:var(--pos2);stroke:var(--pos2)}
+.diamond.p polygon{fill:var(--pos1);stroke:var(--pos1)}
+.diamond.n polygon{fill:var(--neg1);stroke:var(--neg1)}
+.diamond.nn polygon{fill:var(--neg2);stroke:var(--neg2)}
+.diamond text{font:700 15px var(--sans);fill:var(--diamond-ink);text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.diamond.pp text,.diamond.nn text{fill:var(--diamond-ink-strong)}
+
+.grid{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);width:max-content}
+.grid>*{background:var(--surface);min-width:0}
+.grid>.sp{background:var(--bg)}
+.h{padding:8px;font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);display:flex;align-items:flex-end}
+.h.dark{background:var(--band);color:var(--band-ink)}
+.rh{position:relative;display:flex;flex-direction:column;gap:4px;padding:6px;background:var(--band)!important;color:var(--band-ink)}
+.rh .tag{font-size:.72rem;letter-spacing:.08em;opacity:.75;font-weight:700}
+.rh textarea{background:transparent;color:var(--band-ink);border:1px solid rgba(255,255,255,.28);border-radius:4px;resize:none;padding:4px 6px;font-size:.85rem;line-height:1.25;height:64px;width:100%}
+.rh textarea::placeholder{color:rgba(255,255,255,.55)}
+.x{position:absolute;top:2px;right:2px;width:22px;height:22px;border:0;border-radius:4px;background:transparent;color:inherit;cursor:pointer;opacity:.6;font-size:1rem;line-height:1}
+.x:hover{opacity:1;background:rgba(127,127,127,.25)}
+.vc{position:relative;padding:4px 26px 4px 4px;background:var(--input)!important}
+.vc textarea{width:100%;height:44px;resize:none;border:0;background:transparent;padding:4px 6px;line-height:1.25}
+.vc .x{color:var(--muted)}
+.ic{display:grid;place-items:center;background:var(--input)!important}
+.ic select{border:0;background:transparent;font-weight:700;font-size:1.05rem;text-align:center;cursor:pointer;padding:6px 4px}
+.mc{padding:0}
+.mc button{width:100%;height:100%;min-height:52px;border:0;cursor:pointer;font-weight:700;font-size:1.05rem;background:transparent;color:var(--muted)}
+.mc button:hover{box-shadow:inset 0 0 0 2px var(--teal)}
+.mc button[data-v="9"]{background:var(--m9);color:var(--m9-ink)}
+.mc button[data-v="3"]{background:var(--m3);color:var(--m3-ink)}
+.mc button[data-v="1"]{background:var(--m1);color:var(--m1-ink)}
+.addc{display:grid;place-items:center}
+.addc button{border:1px dashed var(--muted);background:transparent;border-radius:6px;cursor:pointer;width:34px;height:34px;font-size:1.2rem;color:var(--muted)}
+.addc button:hover{border-color:var(--teal);color:var(--teal)}
+.addrow{padding:8px;grid-column:1/-1;background:var(--surface)!important}
+.addrow button{border:1px dashed var(--muted);background:transparent;border-radius:6px;padding:6px 12px;cursor:pointer;color:var(--muted);font-weight:700}
+.addrow button:hover{border-color:var(--teal);color:var(--teal)}
+.cs{display:grid;place-items:center;background:var(--input)!important}
+.cs select{border:0;background:transparent;font-weight:700;cursor:pointer;padding:6px 2px}
+.gp{display:grid;place-items:center;font-weight:700;font-variant-numeric:tabular-nums}
+.gp.neg{color:var(--coral)}
+.rl{padding:8px 10px;font-weight:700;display:flex;align-items:center;grid-column:span 2;background:var(--band)!important;color:var(--band-ink)}
+.rv{display:grid;place-items:center;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums;min-height:38px}
+.rv.top{background:var(--gold)!important;color:var(--gold-ink)}
+
+
+/* guided blocks */
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;min-width:0}
+.blk>*{min-width:0}
+.blk-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.blk-h h2{font-size:1.3rem}
+.num{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--band);color:var(--band-ink);font-weight:700;font-family:var(--serif)}
+.time{margin-left:auto;border:1px solid var(--line);border-radius:999px;padding:2px 12px;font-size:.85rem;font-weight:700;color:var(--muted)}
+.cls{background:var(--callout);color:var(--callout-ink);border-radius:8px;padding:10px 14px}
+.cls p,.todo p,.gq p{margin:4px 0 0}
+.cls .lbl{color:var(--teal)}
+.gq{border:1px dashed var(--muted);border-radius:8px;padding:10px 14px}
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.cases button{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 8px;cursor:pointer;font-weight:700}
+.cases button:hover{border-color:var(--teal)}
+.cases button[aria-pressed="true"]{background:var(--band);color:var(--band-ink);border-color:var(--band)}
+.casebox{background:var(--bg);border-radius:8px;padding:10px 14px;display:grid;gap:6px}
+.casebox p{margin:0}
+.notes{width:100%;min-height:92px;background:var(--input);border:1px solid var(--line);border-radius:6px;padding:10px;resize:vertical;line-height:1.4}
+.count{font-size:.85rem;color:var(--muted)}
+.count.ok{color:var(--teal);font-weight:700}
+.mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:980px){.mini{grid-template-columns:1fr 1fr}}
+@media (max-width:560px){.mini{grid-template-columns:1fr}}
+.mini>div{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;align-content:start;min-width:0}
+.mini h3{font-size:1rem}
+.mini p{margin:0;font-size:.9rem}
+.mini .c{background:var(--callout);color:var(--callout-ink);border-radius:6px;padding:6px 8px;font-size:.85rem}
+.pts{display:grid;gap:12px}
+.pts .row{display:grid;gap:4px}
+.pts .row>div{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.sug{background:transparent;border:1px solid var(--line);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:.85rem;font-weight:700;color:var(--teal)}
+.sug:hover{border-color:var(--teal)}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.sub{font-family:var(--serif);font-size:1.05rem;margin:0 0 8px}
+
+.princ{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:4px 12px}
+.princ label{display:flex;gap:8px;align-items:center;padding:4px 0;cursor:pointer}
+.princ input{width:18px;height:18px;accent-color:var(--teal)}
+.ov{position:fixed;inset:0;background:rgba(5,10,20,.65);display:grid;place-items:center;padding:16px;z-index:50;overflow:auto}
+.dlg{background:var(--surface);color:var(--ink);border-radius:12px;padding:20px;max-width:580px;width:100%;max-height:calc(100vh - 32px);overflow:auto;display:grid;gap:12px;border:1px solid var(--line)}
+.dlg input,.dlg textarea{width:100%;background:var(--input);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+.dlg textarea{min-height:64px;resize:vertical}
+.ownsum{display:grid;gap:6px}
+.ownsum p{margin:0}
+/* results */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.card h2{font-size:1.2rem;margin-bottom:12px}
+.bars{display:grid;gap:10px}
+.bar{display:grid;gap:4px}
+.bar .t{display:flex;justify-content:space-between;gap:12px;font-size:.92rem}
+.bar .t span:first-child{overflow-wrap:anywhere}
+.bar .t b{font-variant-numeric:tabular-nums}
+.track{height:12px;background:var(--bg);border-radius:6px;overflow:hidden}
+.fill{height:100%;background:var(--teal);border-radius:6px}
+.bar.first .fill{background:var(--gold)}
+.badge{display:inline-block;background:var(--gold);color:var(--gold-ink);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-right:6px}
+.read p{margin:0 0 10px}
+.read p:last-child{margin-bottom:0}
+.checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:.92rem}
+.checks li{display:flex;gap:8px}
+.checks li::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;margin-top:6px;background:var(--gold)}
+.checks li.ok::before{background:var(--teal)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.88rem;color:var(--muted);align-items:center}
+.legend i{display:inline-grid;place-items:center;width:26px;height:22px;border-radius:4px;font-style:normal;font-weight:700;margin-right:6px;vertical-align:middle}
+details{font-size:.92rem;color:var(--muted)}
+details summary{cursor:pointer;font-weight:700;color:var(--ink)}
+details p{margin:8px 0 0;max-width:80ch}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--band);color:var(--band-ink);padding:8px 16px;border-radius:8px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+.note{font-size:.85rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+
+<header class="band"><div class="wrap">
+  <div class="brand">
+    <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><path d="M4 21 22 5l18 16" fill="none" stroke="#E0A81C" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><rect x="9" y="21" width="26" height="18" fill="none" stroke="#fff" stroke-width="2.5"/><path d="M9 30h26M22 21v18" stroke="#fff" stroke-width="1.5" opacity=".6"/></svg>
+    <div><h1 id="t-title"></h1><p id="t-sub"></p></div>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><div class="lang" role="group" aria-label="Mode"><button type="button" data-mode="ind" aria-pressed="false" id="mInd"></button><button type="button" data-mode="team" aria-pressed="false" id="mTeam"></button></div><div class="lang" role="group" aria-label="Language"><button type="button" data-lang="es" aria-pressed="false">ES</button><button type="button" data-lang="en" aria-pressed="false">EN</button></div></div>
+</div></header>
+
+<main class="wrap">
+  <section class="blk" id="intro">
+    <h2 data-t="introTitle"></h2>
+    <p data-t="introP" style="margin:0"></p>
+    <div class="gq"><span class="lbl" data-t="gqLbl"></span><p data-t="gq"></p></div>
+    <ol class="steps" id="timeline"></ol>
+  </section>
+
+  <section class="blk" id="b1">
+    <div class="blk-h"><span class="num">1</span><h2 data-t="b1"></h2></div>
+    <div class="cls"><span class="lbl" data-t="classLbl"></span><p data-t="class1"></p></div>
+    <div class="todo"><span class="lbl" data-t="todoLbl"></span><p data-t="do1"></p></div>
+    <div class="field team-only"><label class="lbl" for="members" data-t="membersLbl"></label><textarea class="notes" id="members" data-f="members" data-ph="membersPh"></textarea></div>
+    <div class="lbl" data-t="casePick"></div>
+    <div class="cases" id="cases"></div>
+    <div class="casebox" id="casebox"></div>
+    <div class="field team-only"><span class="lbl" data-t="princLbl"></span><span class="note" data-t="princHint"></span><div class="princ" id="principles"></div></div>
+    <div class="field"><label class="lbl" for="notes" data-t="notesLbl"></label><textarea class="notes" id="notes" data-f="notes" data-ph="notesPh"></textarea></div>
+  </section>
+
+  <section class="blk" id="b2">
+    <div class="blk-h"><span class="num">2</span><h2 data-t="b2"></h2></div>
+    <div class="cls"><span class="lbl" data-t="classLbl"></span><p data-t="class2"></p></div>
+    <div class="todo"><span class="lbl" data-t="todoLbl"></span><p data-t="do2"></p></div>
+    <div class="gq" id="trig"></div>
+    <div class="field"><textarea class="notes" id="ans" data-f="ans" data-ph="ansPh" aria-label="Answer" style="min-height:140px"></textarea><span class="count" id="ansCount"></span></div>
+  </section>
+
+  <section class="blk" id="b3">
+    <div class="blk-h"><span class="num">3</span><h2 data-t="b3"></h2></div>
+    <div class="cls"><span class="lbl" data-t="classLbl"></span><p data-t="class3"></p></div>
+    <div class="todo"><span class="lbl" data-t="todoLbl"></span><p data-t="do3"></p></div>
+    <div class="mini" id="mini"></div>
+    <div class="tools" aria-label="Setup">
+      <button type="button" class="btn primary" id="load"></button>
+      <button type="button" class="btn" id="blank"></button>
+      <button type="button" class="btn" id="undo" disabled></button>
+    </div>
+    <section class="house" aria-label="House of Quality" style="padding:12px">
+      <div class="scroll"><div class="inner" id="inner"></div></div>
+      <p class="note" id="t-hint" style="margin:10px 0 0"></p>
+    </section>
+    <div class="legend" id="legend"></div>
+    <div>
+      <h3 class="sub" data-t="check"></h3>
+      <ul class="checks" id="checks"></ul>
+    </div>
+    <details><summary id="t-how"></summary><p id="t-how-p"></p></details>
+  </section>
+
+  <section class="blk" id="b4">
+    <div class="blk-h"><span class="num">4</span><h2 data-t="b4"></h2></div>
+    <div class="cls"><span class="lbl" data-t="classLbl"></span><p data-t="class4"></p></div>
+    <div class="todo"><span class="lbl" data-t="todoLbl"></span><p data-t="do4"></p></div>
+    <div class="two">
+      <div><h3 class="sub" data-t="prio"></h3><div class="bars" id="bars"></div></div>
+      <div class="read"><h3 class="sub" data-t="read"></h3><div id="read"></div></div>
+    </div>
+    <div class="pts">
+      <div class="row"><div><label class="lbl" for="win" data-t="p1"></label><button type="button" class="sug" data-sug="win" data-t="sug"></button></div><textarea class="notes" id="win" data-f="win" data-ph="p1Ph"></textarea></div>
+      <div class="row"><div><label class="lbl" for="trade" data-t="p2"></label><button type="button" class="sug" data-sug="trade" data-t="sug"></button></div><textarea class="notes" id="trade" data-f="trade" data-ph="p2Ph"></textarea></div>
+      <div class="row"><div><label class="lbl" for="rec" data-t="p3"></label></div><textarea class="notes" id="rec" data-f="rec" data-ph="p3Ph"></textarea></div>
+    </div>
+  </section>
+
+  <section class="blk" id="b5">
+    <div class="blk-h"><span class="num">5</span><h2 data-t="b5"></h2></div>
+    <div class="cls"><span class="lbl" data-t="classLbl"></span><p data-t="class5"></p></div>
+    <div class="todo"><span class="lbl" data-t="todoLbl"></span><p data-t="do5"></p></div>
+    <div class="pts team-only">
+      <div class="row"><div><label class="lbl" for="pt1" data-t="pt1"></label><button type="button" class="sug" data-sug="pt1" data-t="sug"></button></div><textarea class="notes" id="pt1" data-f="pt1" data-ph="pt1Ph"></textarea></div>
+      <div class="row"><div><label class="lbl" for="pt2" data-t="pt2"></label></div><textarea class="notes" id="pt2" data-f="pt2" data-ph="pt2Ph"></textarea></div>
+      <div class="row"><div><label class="lbl" for="pt3" data-t="pt3"></label><button type="button" class="sug" data-sug="pt3" data-t="sug"></button></div><textarea class="notes" id="pt3" data-f="pt3" data-ph="pt3Ph"></textarea></div>
+    </div>
+    <div><button type="button" class="btn primary" id="copy"></button></div>
+  </section>
+</main>
+<div class="ov" id="ov" hidden><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="ovT">
+  <h2 id="ovT"></h2><p id="ovP" style="margin:0"></p>
+  <div class="field"><label class="lbl" for="o-name" id="l-name"></label><input type="text" id="o-name" data-o="name" autocomplete="off"></div>
+  <div class="field"><label class="lbl" for="o-what" id="l-what"></label><textarea id="o-what" data-o="what"></textarea></div>
+  <div class="field"><label class="lbl" for="o-who" id="l-who"></label><textarea id="o-who" data-o="who"></textarea></div>
+  <div class="field"><label class="lbl" for="o-tension" id="l-tension"></label><textarea id="o-tension" data-o="tension"></textarea></div>
+  <div class="field"><label class="lbl" for="o-need" id="l-need"></label><textarea id="o-need" data-o="need"></textarea></div>
+  <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button type="button" class="btn" id="o-cancel"></button><button type="button" class="btn primary" id="o-save"></button></div>
+</div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const MAXV=10, MAXR=8, W=93;
+const CASES=[
+ {n:"Apple",p:["Design and experience as an advantage","Diseño/experiencia como ventaja"],q:["Which customer voice does it prioritize, and why can't its integrated experience be copied?","¿Qué voz del cliente prioriza y por qué su experiencia integrada no se copia?"]},
+ {n:"Toyota",p:["The origin of QFD","El origen del QFD"],q:["What design problem did QFD solve, and why was it born in a real operation?","¿Qué problema de diseño resolvió el QFD y por qué nació en una operación real?"]},
+ {n:"Nubank",p:["Value from the need (VOC)","Valor desde la necesidad (VOC)"],q:["What unmet need did it detect, and how did it turn it into operations?","¿Qué necesidad no atendida detectó y cómo la volvió operación?"]},
+ {n:"Dyson",p:["VOC → technical requirement","VOC → requerimiento técnico"],q:["How was a concrete frustration turned into a measurable specification?","¿Cómo se tradujo una frustración concreta en una especificación medible?"]},
+ {n:"Starbucks",p:["Service design","Diseño de servicios"],q:["Which elements of the benefits package turn a commodity into an experience?","¿Qué elementos del paquete de beneficios convierten un commodity en experiencia?"]},
+ {n:"Netflix",p:["Redesigning the service","Rediseñar el servicio"],q:["Why did serving the need, rather than defending the product, avoid obsolescence?","¿Por qué servir la necesidad —y no defender el producto— evitó la obsolescencia?"]},
+ {n:"IKEA",p:["Order winners and trade-offs","Order winners y trade-offs"],q:["Where did it choose NOT to be the best, and what did it gain in return?","¿En qué eligió NO ser la mejor y qué ganó a cambio?"]},
+ {n:"Airbnb",p:["Designing intangibles","Diseñar intangibles"],q:["How do you \"design\" something intangible like trust?","¿Cómo se «diseña» algo intangible como la confianza?"]}
+];
+const TXT={
+en:{title:"House of Quality",sub:"Step by step, from the voice of the customer to the design priority.",
+ introTitle:"Your individual assignment",introTitleT:"Your team assignment",
+ introP:"It is worth 10% of your final grade. Do the steps in order. Each step explains what to do and how it connects to what we saw in class.",
+ introPT:"Your team picks one case, analyzes it, builds a mini House of Quality and prepares a short pitch. Everyone uploads the deliverable, and two random teams present in class.",
+ gqLbl:"Guiding question of the week",gq:"How does knowing customers' needs and expectations affect how an organization determines value?",
+ timeline:["Understand the case","Answer the guiding question","Build the House of Quality","Interpret and recommend","Put it together and submit"],
+ classLbl:"Connection to class",todoLbl:"What to do",
+ b1:"Understand the case",class1:"Value does not start with technology. It starts with understanding what customers need and expect. Your case is a real example of that idea.",
+ do1:"Choose one company. Read one or two reliable sources and note them for your references. Then write a few lines: what the company does, what tension or decision it faced, and which customer need was at stake.",
+ do1T:"Choose your team's case, or use your own company or product. Read one or two reliable sources and note them for your references. Then write a few lines: what the company does, what tension or decision it faced, and which customer need was at stake.",
+ casePick:"Choose your case",pickHint:"Choose a case above to see its anchor principle and trigger question.",principle:"Anchor principle",trigger:"Trigger question",notesLbl:"Case notes",notesPh:"What the company does, the tension it faced, the customer need at stake.",
+ b2:"Answer the guiding question",class2:"This is the question of the week. Your answer links knowing the customer to value: money, loyalty or market leadership.",
+ do2:"In 100–150 words, explain what need the company understood better than its competitors and how that became value. Use your trigger question as a starting point.",ansPh:"Write your answer here.",
+ words:(n)=>`${n} words · target 100–150`,
+ b3:"Build your House of Quality",class3:"QFD turns the voice of the customer into technical requirements the company can measure and control. Akao developed it, and Toyota is where it was born. The house shows where design effort pays off most.",
+ do3:"Fill in the four parts below, in this order. Amber cells are yours to edit. Everything else calculates by itself.",
+ mini:[
+  {t:"Customer voices",d:"Write 3 to 5 things the customer wants, in their own words. Give each one an importance from 1 to 5.",c:"Voice of the customer (VOC). A 5 is usually what wins the customer (an order winner). Lower scores are what you must meet just to compete (a qualifier)."},
+  {t:"Technical requirements",d:"Write 3 to 4 ways the company delivers it. Each must be measurable: can you put a number on it?",c:"This is the translation from the customer's voice into design or operations, like turning a frustration into a measurable specification."},
+  {t:"Relationships",d:"Click each cell: 9 strong, 3 medium, 1 weak, empty none. Ask: if the company improves this, is the customer voice satisfied?",c:"Each relationship shows how strongly a technical decision serves a customer need. The sheet multiplies it by importance to find the priority."},
+  {t:"Roof (trade-offs)",d:"Click one diamond for a pair of requirements: ++ or + if they help each other, − or −− if improving one hurts the other.",c:"Trade-offs: good design means choosing what to be best at and what not to. IKEA is the classic example."}],
+ load:"See an example",blank:"Start over",undo:"Undo",
+ hint:"Amber cells are yours to edit. Click a matrix cell to cycle 9 → 3 → 1 → empty. Take a screenshot of the full house for your report.",
+ check:"Check your house",
+ how:"How the numbers are calculated",howP:"Absolute importance of a requirement = sum of (importance of each customer voice × relationship value). Relative importance (%) = that number divided by the total of all requirements. The requirement with the highest percentage is where design effort pays off most. Method: Akao (1990); Hauser & Clausing (1988).",
+ b4:"Interpret and recommend",class4:"A case analysis ends with an actionable recommendation: what the company decided, or should decide, and why. Your house is the evidence.",
+ do4:"Look at the priority list and write three short points (about 150 words in total). The suggestion buttons give you a starting sentence. Rewrite it in your own words.",
+ prio:"Design priority",read:"What your house says",
+ p1:"Winning requirement",p1Ph:"Which requirement has the highest percentage, and why does it make sense for your customer? Does it match what the company did?",
+ p2:"A trade-off",p2Ph:"Use the pair from your roof. What must the company balance?",
+ p3:"Recommendation",p3Ph:"In 2 to 3 sentences: what did the company decide, or what should it decide, and why?",sug:"Insert suggestion",
+ b5:"Put it together and submit",class5:"A short report with evidence turns an analysis into a decision other people can follow.",
+ do5:"1) Copy the report text and paste it into a Word document. 2) Take a screenshot of your whole house and add it. 3) Add your APA references from Step 1. 4) Upload the report (1–2 pages) to the course platform.",
+ copy:"Copy report text",copied:"Report copied",
+ b5T:"Prepare the pitch and submit",class5T:"The pitch tells the story in order: the customer's voice, how it became design or operations, and what the house says. A short report with evidence makes the story easy to follow.",
+ do5T:"Fill in the three parts of the pitch (4–5 minutes). Then copy the report text, paste it into a Word document, add a screenshot of your house and your APA references, and upload it. Everyone prepares the pitch; two random teams present.",
+ pt1:"1. The key customer voice",pt1Ph:"Which customer voice matters most, in the customer's own words?",pt2:"2. How it became design or operations",pt2Ph:"What did the company do with that voice?",pt3:"3. Our mini House and the winning requirement",pt3Ph:"What does the house say is the priority?",
+ sugVoice:(v,w)=>`The customer voice that matters most is "${v}" (importance ${w}).`,
+ modeInd:"Individual",modeTeam:"Team",membersLbl:"Team members and roles",membersPh:"Name and role, one per line (for example: Ana, analyst; Luis, builds the house; Marta, leads the pitch).",
+ princLbl:"Principles of the week present in your case",princHint:"Tick the ones you can see in your case.",
+ ownBtn:"My company or product",ownLabel:"Your company or product",ownTitle:"Your own company or product",ownIntro:"Use a company or product you know well. Short, simple answers are enough.",
+ ownName:"Name",ownNamePh:"e.g. Coffee tour",ownWhat:"What it does, and in which market",ownWho:"Who the customer is",ownTension:"The tension or decision it faces",ownNeed:"The customer need or expectation at stake",ownSave:"Save",ownCancel:"Close",ownEdit:"Edit",
+ ownTrigger:"What customer need does it understand better than the alternatives, and how does that create value?",
+ rep:["Case","Case notes","Answer to the guiding question","House of Quality","Customer voices (importance)","Technical requirements by priority","Interpretation","Winning requirement","Trade-off","Recommendation","Add your screenshot of the house and your APA references here.","Team members and roles","Principles of the week present","Pitch outline","Company or product","What it does","Customer","Tension or decision","Customer need at stake"],
+ voice:"VOICE OF THE CUSTOMER (WHAT)",imp:"Import. (1–5)",voicePh:"What the customer says",reqPh:"Measurable requirement",
+ us:"Us",rv:"Comp.",gap:"Gap",abs:"Absolute importance",rel:"Relative importance",rank:"Priority (rank)",addV:"+ Add customer voice",addR:"Add requirement",delV:"Remove voice",delR:"Remove requirement",
+ roofT:"Roof",roofD:"Do two requirements help or hurt each other? Click a diamond: ++ · + · − · −−",
+ legend:["Relationship","strong","medium","weak","Roof","helps","hurts"],
+ emptyRead:"Add relationships in the matrix to see the priority.",
+ top:(n,p)=>`The design priority is ${n} (${p}% of the total).`,
+ contrib:(l)=>`It leads because it is tied most strongly to the voices that matter most: ${l}.`,
+ trade:(l)=>`Trade-offs to manage: ${l}.`,noTrade:"No negative correlations are marked in the roof yet.",
+ c_empty:"Some customer voices or requirements have no name yet.",c_noRelV:(x)=>`The voice "${x}" has no relationships in the matrix.`,c_noRelR:(x)=>`The requirement "${x}" has no relationships in the matrix.`,
+ c_same:"All importance scores are equal. Differentiate them: not everything is a 5.",c_roof:"Mark at least one correlation in the roof.",c_ok:"Everything looks consistent.",
+ vDef:"Customer voice",rDef:"Requirement"},
+es:{title:"Casa de la Calidad",sub:"Paso a paso, de la voz del cliente a la prioridad de diseño.",
+ introTitle:"Tu tarea individual",introTitleT:"Tarea del equipo",
+ introP:"Vale el 10% de tu nota final. Haz los pasos en orden. Cada paso explica qué hacer y cómo se conecta con lo que vimos en clase.",
+ introPT:"Su equipo elige un caso, lo analiza, construye una mini Casa de la Calidad y prepara un pitch corto. Todos suben el entregable y se eligen al azar dos equipos para presentar en clase.",
+ gqLbl:"Pregunta generadora de la semana",gq:"¿Cómo impacta el conocimiento de las necesidades y expectativas en la determinación del valor en una organización?",
+ timeline:["Entender el caso","Responder la pregunta generadora","Construir la Casa de la Calidad","Interpretar y recomendar","Armar y entregar"],
+ classLbl:"Conexión con la clase",todoLbl:"Qué hacer",
+ b1:"Entender el caso",class1:"El valor no nace de la tecnología. Nace de entender lo que el cliente necesita y espera. Tu caso es un ejemplo real de esa idea.",
+ do1:"Elige una empresa. Lee una o dos fuentes confiables y anótalas para tus referencias. Luego escribe unas líneas: qué hace la empresa, qué tensión o decisión enfrentó y qué necesidad del cliente estaba en juego.",
+ do1T:"Elijan el caso de su equipo, o usen su propia empresa o producto. Lean una o dos fuentes confiables y anótenlas para sus referencias. Luego escriban unas líneas: qué hace la empresa, qué tensión o decisión enfrentó y qué necesidad del cliente estaba en juego.",
+ casePick:"Elige tu caso",pickHint:"Elige un caso arriba para ver su principio ancla y su pregunta detonante.",principle:"Principio ancla",trigger:"Pregunta detonante",notesLbl:"Notas del caso",notesPh:"Qué hace la empresa, la tensión que enfrentó, la necesidad del cliente en juego.",
+ b2:"Responder la pregunta generadora",class2:"Esta es la pregunta de la semana. Tu respuesta une conocer al cliente con el valor: dinero, lealtad o dominio de mercado.",
+ do2:"En 100–150 palabras, explica qué necesidad entendió la empresa mejor que su competencia y cómo eso se convirtió en valor. Parte de la pregunta detonante de tu caso.",ansPh:"Escribe tu respuesta aquí.",
+ words:(n)=>`${n} palabras · meta 100–150`,
+ b3:"Construye tu Casa de la Calidad",class3:"El QFD convierte la voz del cliente en requerimientos técnicos que la empresa puede medir y controlar. Lo desarrolló Akao y nació en Toyota. La casa muestra dónde rinde más el esfuerzo de diseño.",
+ do3:"Completa las cuatro partes de abajo, en orden. Las celdas ámbar son para que las edites. Todo lo demás se calcula solo.",
+ mini:[
+  {t:"Voces del cliente",d:"Escribe de 3 a 5 cosas que quiere el cliente, en sus palabras. Dale a cada una una importancia de 1 a 5.",c:"Voz del cliente (VOC). Un 5 suele ser lo que gana al cliente (order winner). Las notas bajas son lo que debes cumplir solo para competir (qualifier)."},
+  {t:"Requerimientos técnicos",d:"Escribe de 3 a 4 formas en que la empresa lo cumple. Cada una debe ser medible: ¿le puedes poner un número?",c:"Es la traducción de la voz del cliente a diseño u operación, como convertir una frustración en una especificación medible."},
+  {t:"Relaciones",d:"Haz clic en cada celda: 9 fuerte, 3 media, 1 débil, vacío ninguna. Pregunta: si la empresa mejora esto, ¿se satisface la voz del cliente?",c:"Cada relación muestra qué tanto una decisión técnica sirve a una necesidad del cliente. La hoja la multiplica por la importancia para hallar la prioridad."},
+  {t:"Techo (trade-offs)",d:"Haz clic en un rombo para un par de requerimientos: ++ o + si se ayudan, − o −− si mejorar uno perjudica al otro.",c:"Trade-offs: diseñar bien es elegir en qué ser el mejor y en qué no. IKEA es el ejemplo clásico."}],
+ load:"Ver un ejemplo",blank:"Empezar de nuevo",undo:"Deshacer",
+ hint:"Las celdas ámbar son para que las edites. Haz clic en una celda de la matriz para alternar 9 → 3 → 1 → vacío. Toma una captura de la casa completa para tu reporte.",
+ check:"Revisa tu casa",
+ how:"Cómo se calculan los números",howP:"Importancia absoluta de un requerimiento = suma de (importancia de cada voz del cliente × valor de la relación). Importancia relativa (%) = esa cifra dividida entre el total de todos los requerimientos. El requerimiento con mayor porcentaje es donde más rinde el esfuerzo de diseño. Método: Akao (1990); Hauser y Clausing (1988).",
+ b4:"Interpretar y recomendar",class4:"Un análisis de caso termina con una recomendación accionable: qué decidió la empresa, o qué debió decidir, y por qué. Tu casa es la evidencia.",
+ do4:"Mira la lista de prioridades y escribe tres puntos cortos (unas 150 palabras en total). Los botones de sugerencia te dan una frase para empezar. Reescríbela con tus palabras.",
+ prio:"Prioridad de diseño",read:"Lo que dice tu casa",
+ p1:"Requerimiento ganador",p1Ph:"¿Qué requerimiento tiene el mayor porcentaje y por qué tiene sentido para tu cliente? ¿Coincide con lo que hizo la empresa?",
+ p2:"Un trade-off",p2Ph:"Usa el par de tu techo. ¿Qué debe equilibrar la empresa?",
+ p3:"Recomendación",p3Ph:"En 2 a 3 oraciones: ¿qué decidió la empresa, o qué debería decidir, y por qué?",sug:"Insertar sugerencia",
+ b5:"Armar y entregar",class5:"Un reporte corto con evidencia convierte un análisis en una decisión que otros pueden seguir.",
+ do5:"1) Copia el texto del reporte y pégalo en un documento de Word. 2) Toma una captura de tu casa completa y agrégala. 3) Agrega tus referencias APA del Paso 1. 4) Sube el reporte (1–2 páginas) a la plataforma del curso.",
+ copy:"Copiar texto del reporte",copied:"Reporte copiado",
+ b5T:"Preparar el pitch y entregar",class5T:"El pitch cuenta la historia en orden: la voz del cliente, cómo se volvió diseño u operación y qué dice la casa. Un reporte corto con evidencia hace fácil seguir la historia.",
+ do5T:"Completen las tres partes del pitch (4–5 minutos). Luego copien el texto del reporte, péguenlo en un documento de Word, agreguen la captura de su casa y sus referencias APA, y suban el archivo. Todos preparan el pitch; se eligen al azar dos equipos para presentar.",
+ pt1:"1. La voz del cliente clave",pt1Ph:"¿Qué voz del cliente importa más, con las palabras del cliente?",pt2:"2. Cómo se tradujo en diseño u operación",pt2Ph:"¿Qué hizo la empresa con esa voz?",pt3:"3. Nuestra mini Casa y el requerimiento ganador",pt3Ph:"¿Qué dice la casa que es la prioridad?",
+ sugVoice:(v,w)=>`La voz del cliente que más importa es «${v}» (importancia ${w}).`,
+ modeInd:"Individual",modeTeam:"Equipo",membersLbl:"Integrantes y roles",membersPh:"Nombre y rol, uno por línea (por ejemplo: Ana, analista; Luis, arma la casa; Marta, lidera el pitch).",
+ princLbl:"Principios de la semana presentes en su caso",princHint:"Marquen los que ven en su caso.",
+ ownBtn:"Mi empresa o producto",ownLabel:"Tu empresa o producto",ownTitle:"Tu propia empresa o producto",ownIntro:"Usa una empresa o producto que conozcas bien. Respuestas cortas y sencillas bastan.",
+ ownName:"Nombre",ownNamePh:"p. ej. Tour de café",ownWhat:"Qué hace y en qué mercado",ownWho:"Quién es el cliente",ownTension:"La tensión o decisión que enfrenta",ownNeed:"La necesidad o expectativa del cliente en juego",ownSave:"Guardar",ownCancel:"Cerrar",ownEdit:"Editar",
+ ownTrigger:"¿Qué necesidad del cliente entiende mejor que las alternativas y cómo eso crea valor?",
+ rep:["Caso","Notas del caso","Respuesta a la pregunta generadora","Casa de la Calidad","Voces del cliente (importancia)","Requerimientos técnicos por prioridad","Interpretación","Requerimiento ganador","Trade-off","Recomendación","Agrega aquí tu captura de la casa y tus referencias APA.","Integrantes y roles","Principios de la semana presentes","Guion del pitch","Empresa o producto","Qué hace","Cliente","Tensión o decisión","Necesidad del cliente en juego"],
+ voice:"VOZ DEL CLIENTE (QUÉ)",imp:"Import. (1–5)",voicePh:"Lo que dice el cliente",reqPh:"Requerimiento medible",
+ us:"Nosotros",rv:"Compet.",gap:"Brecha",abs:"Importancia absoluta",rel:"Importancia relativa",rank:"Prioridad (ranking)",addV:"+ Agregar voz del cliente",addR:"Agregar requerimiento",delV:"Quitar voz",delR:"Quitar requerimiento",
+ roofT:"Techo",roofD:"¿Dos requerimientos se ayudan o se perjudican? Haz clic en un rombo: ++ · + · − · −−",
+ legend:["Relación","fuerte","media","débil","Techo","se refuerzan","se perjudican"],
+ emptyRead:"Agrega relaciones en la matriz para ver la prioridad.",
+ top:(n,p)=>`La prioridad de diseño es ${n} (${p}% del total).`,
+ contrib:(l)=>`Lidera porque está más fuertemente ligado a las voces que más importan: ${l}.`,
+ trade:(l)=>`Trade-offs a manejar: ${l}.`,noTrade:"Todavía no hay correlaciones negativas marcadas en el techo.",
+ c_empty:"Hay voces del cliente o requerimientos sin nombre.",c_noRelV:(x)=>`La voz «${x}» no tiene relaciones en la matriz.`,c_noRelR:(x)=>`El requerimiento «${x}» no tiene relaciones en la matriz.`,
+ c_same:"Todas las importancias son iguales. Diferéncialas: no todo puede ser un 5.",c_roof:"Marca al menos una correlación en el techo.",c_ok:"Todo se ve consistente.",
+ vDef:"Voz del cliente",rDef:"Requerimiento"}
+};
+const EXAMPLE={
+  v:[[["Coffee that tastes fresh and of origin","Café que sepa fresco y de origen"],5],[["Learn where the coffee comes from","Aprender de dónde viene el café"],4],[["Feel looked after and welcome","Sentirse atendido y bienvenido"],5],[["The tour should not feel long","Que el recorrido no se sienta largo"],3],[["Fair price for the experience","Precio justo por la experiencia"],4]],
+  r:[["Roasting temp. (°C)","Temp. de tueste (°C)"],["Tour length (min)","Tiempo de tour (min)"],["Bilingual guides (no.)","Guías bilingües (n.º)"],["Tasting stations","Estaciones de degustación"]],
+  m:[[9,1,0,3],[1,9,9,3],[0,3,9,3],[0,9,1,3],[3,1,1,3]],
+  roof:{"1-3":"+"}
+};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let S=null, prev=null, AUTO={win:"",trade:""};
+const defLang=()=>{try{return (navigator.language||"en").toLowerCase().startsWith("es")?"es":"en"}catch(e){return "en"}};
+const tt=()=>TXT[S.lang];
+const KEEP=["mode","caseIdx","notes","ans","win","trade","rec","members","princ","pt1","pt2","pt3","own"];
+const mt=k=>{const T=tt();return (S.mode==="team"&&T[k+"T"]!==undefined)?T[k+"T"]:T[k]};
+
+function houseBlank(){return {v:[0,1,2].map(()=>({t:"",w:3})),r:["","",""],m:[0,1,2].map(()=>[0,0,0]),roof:{},comp:{on:false,us:[3,3,3],rv:[3,3,3]}}}
+function houseExample(lang){const k=lang==="es"?1:0,e=EXAMPLE;return {v:e.v.map(x=>({t:x[0][k],w:x[1]})),r:e.r.map(x=>x[k]),m:e.m.map(r=>r.slice()),roof:Object.assign({},e.roof),comp:{on:false,us:e.v.map(()=>3),rv:e.v.map(()=>3)}}}
+function newState(lang){return Object.assign({lang,mode:"ind",caseIdx:-1,notes:"",ans:"",win:"",trade:"",rec:"",members:"",princ:[],pt1:"",pt2:"",pt3:"",own:{name:"",what:"",who:"",tension:"",need:""}},houseBlank())}
+function save(){try{localStorage.setItem("qfd-house-v3",JSON.stringify(S))}catch(e){}}
+function loadSaved(){try{const s=JSON.parse(localStorage.getItem("qfd-house-v3"));if(s&&Array.isArray(s.v)&&Array.isArray(s.r)&&Array.isArray(s.m))return s}catch(e){}return null}
+function snapshot(){prev=JSON.stringify(S);$("undo").disabled=false}
+function wordCount(t){t=t.trim();return t?t.split(/\s+/).length:0}
+
+function calc(){
+  const n=S.r.length, abs=S.r.map((_,j)=>S.v.reduce((a,v,i)=>a+v.w*(S.m[i][j]||0),0));
+  const tot=abs.reduce((a,b)=>a+b,0);
+  return {abs,tot,rel:abs.map(a=>tot?a/tot:0),rank:abs.map(a=>a?1+abs.filter(b=>b>a).length:null),n};
+}
+const rName=j=>S.r[j].trim()||`${tt().rDef} ${j+1}`;
+const vName=i=>S.v[i].t.trim()||`${tt().vDef} ${i+1}`;
+
+function renderStatic(){
+  const T=tt();
+  document.documentElement.lang=S.lang;
+  $("t-title").textContent=T.title; $("t-sub").textContent=T.sub;
+  document.querySelectorAll("[data-t]").forEach(el=>{const v=mt(el.dataset.t);if(typeof v==="string")el.textContent=v});
+  $("mInd").textContent=T.modeInd;$("mTeam").textContent=T.modeTeam;
+  document.querySelectorAll("[data-mode]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===S.mode?"true":"false"));
+  document.querySelectorAll(".team-only").forEach(el=>{el.hidden=S.mode!=="team"});
+  $("principles").innerHTML=CASES.map((c,i)=>`<label><input type="checkbox" data-pr="${i}"${S.princ.includes(i)?" checked":""}><span>${esc(c.p[S.lang==="es"?1:0])}</span></label>`).join("");
+  document.querySelectorAll("[data-ph]").forEach(el=>{el.placeholder=T[el.dataset.ph]||""});
+    document.querySelectorAll("textarea[data-f]").forEach(el=>{el.value=S[el.dataset.f]||""});
+  $("timeline").innerHTML=T.timeline.map((t,i)=>`<li><b>${i+1}</b><span>${esc(t)}</span></li>`).join("");
+  $("mini").innerHTML=T.mini.map((x,i)=>`<div><h3>3${"abcd"[i]} · ${esc(x.t)}</h3><p>${esc(x.d)}</p><p class="c">${esc(x.c)}</p></div>`).join("");
+  $("load").textContent=T.load; $("blank").textContent=T.blank; $("undo").textContent=T.undo; $("copy").textContent=T.copy;
+  $("t-hint").textContent=T.hint;
+  const L=T.legend;
+  $("legend").innerHTML=`<span><b>${L[0]}:</b></span><span><i style="background:var(--m9);color:var(--m9-ink)">9</i>${L[1]}</span><span><i style="background:var(--m3);color:var(--m3-ink)">3</i>${L[2]}</span><span><i style="background:var(--m1);color:var(--m1-ink)">1</i>${L[3]}</span><span><b>${L[4]}:</b></span><span><i style="background:var(--pos2);color:#fff">++</i>${L[5]}</span><span><i style="background:var(--neg2);color:#fff">−−</i>${L[6]}</span>`;
+  $("t-how").textContent=T.how; $("t-how-p").textContent=T.howP;
+  document.querySelectorAll("[data-lang]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.lang===S.lang?"true":"false"));
+  renderCases(); updateCount();
+}
+function caseName(){return S.caseIdx===8?(S.own.name.trim()||tt().ownLabel):(CASES[S.caseIdx]?CASES[S.caseIdx].n:"")}
+function renderCases(){
+  const T=tt(), k=S.lang==="es"?1:0, c=CASES[S.caseIdx], own=S.caseIdx===8;
+  $("cases").innerHTML=CASES.map((x,i)=>`<button type="button" data-case="${i}" aria-pressed="${i===S.caseIdx}">${x.n}</button>`).join("")+`<button type="button" data-case="own" aria-pressed="${own}">${esc(T.ownBtn)}</button>`;
+  if(c)$("casebox").innerHTML=`<p><span class="lbl">${T.principle}</span><br>${esc(c.p[k])}</p><p><span class="lbl">${T.trigger}</span><br>${esc(c.q[k])}</p>`;
+  else if(own){const o=S.own;$("casebox").innerHTML=`<div class="ownsum"><p><span class="lbl">${esc(T.ownLabel)}</span><br><b>${esc(o.name||"-")}</b></p>`+[["ownWhat","what"],["ownWho","who"],["ownTension","tension"],["ownNeed","need"]].map(([l,f])=>o[f].trim()?`<p><span class="lbl">${esc(T[l])}</span><br>${esc(o[f])}</p>`:"").join("")+`<div><button type="button" class="btn" data-ownedit>${esc(T.ownEdit)}</button></div></div>`}
+  else $("casebox").innerHTML=`<p>${esc(T.pickHint)}</p>`;
+  $("trig").innerHTML=c?`<span class="lbl">${T.trigger} · ${c.n}</span><p>${esc(c.q[k])}</p>`:own?`<span class="lbl">${T.trigger} · ${esc(caseName())}</span><p>${esc(T.ownTrigger)}</p>`:`<span class="lbl">${T.trigger}</span><p>${esc(T.pickHint)}</p>`;
+}
+function openOwn(){
+  const T=tt();
+  $("ovT").textContent=T.ownTitle;$("ovP").textContent=T.ownIntro;
+  [["name","ownName"],["what","ownWhat"],["who","ownWho"],["tension","ownTension"],["need","ownNeed"]].forEach(([f,l])=>{$("l-"+f).textContent=T[l];$("o-"+f).value=S.own[f]||""});
+  $("o-name").placeholder=T.ownNamePh;$("o-save").textContent=T.ownSave;$("o-cancel").textContent=T.ownCancel;
+  $("ov").hidden=false;$("o-name").focus();
+}
+function closeOwn(){$("ov").hidden=true}
+function updateCount(){const n=wordCount(S.ans),el=$("ansCount");el.textContent=tt().words(n);el.classList.toggle("ok",n>=100&&n<=150)}
+
+function renderHouse(){
+  const T=tt(), n=S.r.length, on=S.comp.on;
+  const cols=`240px 64px repeat(${n},92px) 52px`+(on?" 16px 58px 58px 58px":"");
+  let h=`<div class="roofrow"><div class="roofcap"><b>${T.roofT}</b>${esc(T.roofD)}</div><svg class="roofsvg" id="roof" width="${n*W}" height="${Math.round(n*W/2)}" viewBox="0 0 ${n*W} ${n*W/2}"></svg></div>`;
+  h+=`<div class="grid" style="grid-template-columns:${cols}">`;
+  h+=`<div class="h dark">${T.voice}</div><div class="h dark">${T.imp}</div>`;
+  for(let j=0;j<n;j++){
+    h+=`<div class="rh"><span class="tag">TR${j+1}</span><textarea data-r="${j}" placeholder="${esc(T.reqPh)}" aria-label="TR${j+1}">${esc(S.r[j])}</textarea>${n>2?`<button type="button" class="x" data-delr="${j}" title="${esc(T.delR)}" aria-label="${esc(T.delR)} ${j+1}">×</button>`:""}</div>`;
+  }
+  h+=`<div class="addc">${n<MAXR?`<button type="button" data-addr title="${esc(T.addR)}" aria-label="${esc(T.addR)}">+</button>`:""}</div>`;
+  if(on)h+=`<div class="sp"></div><div class="h dark" style="justify-content:center">${T.us}</div><div class="h dark" style="justify-content:center">${T.rv}</div><div class="h dark" style="justify-content:center">${T.gap}</div>`;
+  S.v.forEach((v,i)=>{
+    h+=`<div class="vc"><textarea data-v="${i}" placeholder="${esc(T.voicePh)}" aria-label="${esc(T.vDef)} ${i+1}">${esc(v.t)}</textarea>${S.v.length>1?`<button type="button" class="x" data-delv="${i}" title="${esc(T.delV)}" aria-label="${esc(T.delV)} ${i+1}">×</button>`:""}</div>`;
+    h+=`<div class="ic"><select data-w="${i}" aria-label="${esc(T.imp)} ${i+1}">${[1,2,3,4,5].map(k=>`<option${k===v.w?" selected":""}>${k}</option>`).join("")}</select></div>`;
+    for(let j=0;j<n;j++){const val=S.m[i][j]||0;h+=`<div class="mc"><button type="button" data-m="${i}-${j}" data-v="${val}" aria-label="${esc(vName(i))} × ${esc(rName(j))}: ${val||"–"}">${val||""}</button></div>`}
+    h+=`<div class="sp"></div>`;
+    if(on){const g=S.comp.us[i]-S.comp.rv[i];
+      h+=`<div class="sp"></div><div class="cs"><select data-us="${i}">${[1,2,3,4,5].map(k=>`<option${k===S.comp.us[i]?" selected":""}>${k}</option>`).join("")}</select></div><div class="cs"><select data-rv="${i}">${[1,2,3,4,5].map(k=>`<option${k===S.comp.rv[i]?" selected":""}>${k}</option>`).join("")}</select></div><div class="gp${g<0?" neg":""}" data-gap="${i}">${g>0?"+"+g:g}</div>`}
+  });
+  h+=`<div class="addrow">${S.v.length<MAXV?`<button type="button" data-addv>${esc(T.addV)}</button>`:""}</div>`;
+  [["abs",T.abs],["rel",T.rel],["rank",T.rank]].forEach(([k,label])=>{
+    h+=`<div class="rl">${label}</div>`;
+    for(let j=0;j<n;j++)h+=`<div class="rv" data-k="${k}-${j}"></div>`;
+    h+=`<div class="sp"></div>`; if(on)h+=`<div class="sp"></div><div class="sp"></div><div class="sp"></div><div class="sp"></div>`;
+  });
+  h+=`</div>`;
+  $("inner").innerHTML=h;
+  renderRoof(); update();
+}
+const ROOFCLS={"++":"pp","+":"p","−":"n","−−":"nn"};
+function renderRoof(){
+  const n=S.r.length; let s="";
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+    const k=j-i, cx=(i+j+1)/2*W, cy=n*W/2-k*W/2, hw=W/2-1, v=S.roof[i+"-"+j]||"";
+    const lab=`TR${i+1} × TR${j+1}: ${rName(i)} / ${rName(j)}`;
+    s+=`<g class="diamond ${v?ROOFCLS[v]:"empty"}" data-roof="${i}-${j}" tabindex="0" role="button" aria-label="${esc(lab)}: ${v||"–"}"><title>${esc(lab)}</title><polygon points="${cx},${cy-hw} ${cx+hw},${cy} ${cx},${cy+hw} ${cx-hw},${cy}"/><text x="${cx}" y="${cy}">${v}</text></g>`;
+  }
+  $("roof").innerHTML=s;
+}
+function negPairs(){return Object.entries(S.roof).filter(([k,v])=>v==="−"||v==="−−").map(([k])=>{const [a,b]=k.split("-").map(Number);return `${rName(a)} ↔ ${rName(b)}`})}
+function update(){
+  const T=tt(), c=calc(), top=c.abs.indexOf(Math.max(...c.abs));
+  c.abs.forEach((a,j)=>{
+    const set=(k,t,isTop)=>{const el=document.querySelector(`[data-k="${k}-${j}"]`);if(el){el.textContent=t;el.classList.toggle("top",!!isTop&&c.rank[j]===1)}};
+    set("abs",a||"0"); set("rel",(c.rel[j]*100).toFixed(1)+"%"); set("rank",c.rank[j]??"–",true);
+  });
+  const order=S.r.map((_,j)=>j).sort((a,b)=>c.abs[b]-c.abs[a]||a-b), mx=Math.max(...c.abs,1);
+  $("bars").innerHTML=order.map((j,k)=>`<div class="bar${k===0&&c.abs[j]>0?" first":""}"><div class="t"><span>${k===0&&c.abs[j]>0?`<span class="badge">1</span>`:""}${esc(rName(j))}</span><b>${(c.rel[j]*100).toFixed(1)}%</b></div><div class="track"><div class="fill" style="width:${c.abs[j]/mx*100}%"></div></div></div>`).join("");
+  let rd="", win="", trade="", pt1="";
+  const tv=S.v.map((v,i)=>({i,w:v.w})).sort((a,b)=>b.w-a.w||a.i-b.i)[0]; if(tv&&S.v[tv.i].t.trim())pt1=T.sugVoice(vName(tv.i),tv.w);
+  const neg=negPairs();
+  trade=neg.length?T.trade(neg.join("; ")):T.noTrade;
+  if(c.tot>0){
+    const pct=(c.rel[top]*100).toFixed(1);
+    const contrib=S.v.map((v,i)=>({i,s:v.w*(S.m[i][top]||0)})).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,2).map(x=>`"${vName(x.i)}" (${S.v[x.i].w}×${S.m[x.i][top]})`).join(", ");
+    win=T.top(rName(top),pct)+(contrib?" "+T.contrib(contrib):"");
+    rd=`<p><b>${esc(T.top(rName(top),pct))}</b></p>`+(contrib?`<p>${esc(T.contrib(contrib))}</p>`:"")+`<p>${esc(trade)}</p>`;
+  } else rd=`<p>${esc(T.emptyRead)}</p>`;
+  AUTO={win,trade,pt1,pt3:win};
+  $("read").innerHTML=rd;
+  const ch=[];
+  if(S.v.some(v=>!v.t.trim())||S.r.some(r=>!r.trim()))ch.push(T.c_empty);
+  S.v.forEach((v,i)=>{if(v.t.trim()&&!S.m[i].some(x=>x))ch.push(T.c_noRelV(v.t.trim()))});
+  S.r.forEach((r,j)=>{if(r.trim()&&!S.v.some((_,i)=>S.m[i][j]))ch.push(T.c_noRelR(r.trim()))});
+  if(S.v.length>=3&&S.v.every(v=>v.w===S.v[0].w))ch.push(T.c_same);
+  if(!Object.values(S.roof).some(Boolean))ch.push(T.c_roof);
+  $("checks").innerHTML=ch.length?ch.map(x=>`<li>${esc(x)}</li>`).join(""):`<li class="ok">${esc(T.c_ok)}</li>`;
+  save();
+}
+function report(){
+  const T=tt(), R=T.rep, c=calc(), team=S.mode==="team", own=S.caseIdx===8;
+  const order=S.r.map((_,j)=>j).sort((a,b)=>c.abs[b]-c.abs[a]||a-b);
+  let t=`${R[0]}: ${caseName()||"-"}\n\n`;
+  if(team&&S.members.trim())t+=`${R[11]}\n${S.members.trim()}\n\n`;
+  if(own){const o=S.own;t+=`${R[14]}\n`+[[15,"what"],[16,"who"],[17,"tension"],[18,"need"]].filter(([i,f])=>o[f].trim()).map(([i,f])=>`- ${R[i]}: ${o[f].trim()}`).join("\n")+"\n\n"}
+  if(team&&S.princ.length)t+=`${R[12]}\n`+S.princ.map(i=>`- ${CASES[i].p[S.lang==="es"?1:0]}`).join("\n")+"\n\n";
+  if(S.notes.trim())t+=`${R[1]}\n${S.notes.trim()}\n\n`;
+  t+=`${R[2]}\n${S.ans.trim()||"-"}\n\n`;
+  t+=`${R[3]}\n${R[4]}:\n`+S.v.map((v,i)=>`- ${vName(i)} (${v.w})`).join("\n")+`\n\n${R[5]}:\n`+order.map((j,k)=>`${k+1}. ${rName(j)}: ${(c.rel[j]*100).toFixed(1)}%`).join("\n")+"\n\n";
+  t+=`${R[6]}\n${R[7]}: ${S.win.trim()||"-"}\n${R[8]}: ${S.trade.trim()||"-"}\n${R[9]}: ${S.rec.trim()||"-"}\n\n`;
+  if(team)t+=`${R[13]}\n1. ${S.pt1.trim()||"-"}\n2. ${S.pt2.trim()||"-"}\n3. ${S.pt3.trim()||"-"}\n\n`;
+  return t+R[10]+"\n";
+}
+function toast(m){const el=$("toast");el.textContent=m;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("on"),1800)}
+
+/* events */
+const inner=$("inner");
+inner.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.dataset.v!==undefined){S.v[+t.dataset.v].t=t.value;update()}
+  else if(t.dataset.r!==undefined){S.r[+t.dataset.r]=t.value;update();document.querySelectorAll(".diamond").forEach(g=>{const [i,j]=g.dataset.roof.split("-").map(Number);g.querySelector("title").textContent=`TR${i+1} × TR${j+1}: ${rName(i)} / ${rName(j)}`})}
+});
+inner.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.dataset.w!==undefined){S.v[+t.dataset.w].w=+t.value;update()}
+  else if(t.dataset.us!==undefined){S.comp.us[+t.dataset.us]=+t.value;update()}
+  else if(t.dataset.rv!==undefined){S.comp.rv[+t.dataset.rv]=+t.value;update()}
+});
+const NEXT={0:9,9:3,3:1,1:0};
+const RNEXT={"":"++","++":"+","+":"−","−":"−−","−−":""};
+inner.addEventListener("click",e=>{
+  const b=e.target.closest("button,[data-roof]"); if(!b)return;
+  if(b.dataset.m){const [i,j]=b.dataset.m.split("-").map(Number);const v=NEXT[S.m[i][j]||0];S.m[i][j]=v;b.dataset.v=v;b.textContent=v||"";update()}
+  else if(b.dataset.roof){const k=b.dataset.roof,v=RNEXT[S.roof[k]||""];if(v)S.roof[k]=v;else delete S.roof[k];renderRoof();update()}
+  else if(b.hasAttribute("data-addv")){if(S.v.length<MAXV){S.v.push({t:"",w:3});S.m.push(S.r.map(()=>0));S.comp.us.push(3);S.comp.rv.push(3);renderHouse()}}
+  else if(b.hasAttribute("data-addr")){if(S.r.length<MAXR){S.r.push("");S.m.forEach(r=>r.push(0));renderHouse()}}
+  else if(b.dataset.delv!==undefined){const i=+b.dataset.delv;S.v.splice(i,1);S.m.splice(i,1);S.comp.us.splice(i,1);S.comp.rv.splice(i,1);renderHouse()}
+  else if(b.dataset.delr!==undefined){const d=+b.dataset.delr;S.r.splice(d,1);S.m.forEach(r=>r.splice(d,1));
+    const nr={};Object.entries(S.roof).forEach(([k,v])=>{let [a,c]=k.split("-").map(Number);if(a===d||c===d)return;if(a>d)a--;if(c>d)c--;nr[a+"-"+c]=v});S.roof=nr;renderHouse()}
+});
+inner.addEventListener("keydown",e=>{
+  const g=e.target.closest&&e.target.closest("[data-roof]");
+  if(g&&(e.key==="Enter"||e.key===" ")){e.preventDefault();g.dispatchEvent(new MouseEvent("click",{bubbles:true}))}
+  const b=e.target.closest&&e.target.closest("[data-m]");
+  if(b&&e.key.length===1&&"0139".includes(e.key)){const [i,j]=b.dataset.m.split("-").map(Number);const v=+e.key;S.m[i][j]=v;b.dataset.v=v;b.textContent=v||"";update()}
+});
+document.addEventListener("input",e=>{
+  const f=e.target.dataset&&e.target.dataset.f; if(!f)return;
+  S[f]=e.target.value; if(f==="ans")updateCount(); save();
+});
+$("cases").addEventListener("click",e=>{const b=e.target.closest("[data-case]");if(!b)return;
+  if(b.dataset.case==="own"){S.caseIdx=8;renderCases();save();openOwn()}else{S.caseIdx=+b.dataset.case;renderCases();save()}});
+$("casebox").addEventListener("click",e=>{if(e.target.closest("[data-ownedit]"))openOwn()});
+$("o-save").addEventListener("click",()=>{document.querySelectorAll("[data-o]").forEach(el=>{S.own[el.dataset.o]=el.value});closeOwn();renderCases();save()});
+$("o-cancel").addEventListener("click",closeOwn);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("ov").hidden)closeOwn()});
+$("principles").addEventListener("change",e=>{const i=+e.target.dataset.pr;S.princ=S.princ.filter(x=>x!==i);if(e.target.checked)S.princ.push(i);save()});
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{S.mode=b.dataset.mode;renderStatic();save()}));
+document.addEventListener("click",e=>{
+  const b=e.target.closest("[data-sug]"); if(!b)return;
+  const f=b.dataset.sug; S[f]=AUTO[f]; $(f).value=S[f]; save();
+});
+function setHouse(h){KEEP.forEach(k=>{h[k]=S[k]});h.lang=S.lang;S=h}
+$("load").addEventListener("click",()=>{snapshot();setHouse(houseExample(S.lang));renderStatic();renderHouse()});
+$("blank").addEventListener("click",()=>{snapshot();setHouse(houseBlank());renderStatic();renderHouse()});
+$("undo").addEventListener("click",()=>{if(!prev)return;S=JSON.parse(prev);prev=null;$("undo").disabled=true;renderStatic();renderHouse()});
+document.querySelectorAll("[data-lang]").forEach(b=>b.addEventListener("click",()=>{S.lang=b.dataset.lang;renderStatic();renderHouse()}));
+$("copy").addEventListener("click",async()=>{
+  const t=report();
+  try{await navigator.clipboard.writeText(t);toast(tt().copied)}
+  catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast(tt().copied)}catch(_){}ta.remove()}
+});
+
+S=Object.assign(newState(defLang()),loadSaved()||{});
+if(!S.own)S.own={name:"",what:"",who:"",tension:"",need:""};if(!Array.isArray(S.princ))S.princ=[];
+if(!S.comp)S.comp={on:false,us:S.v.map(()=>3),rv:S.v.map(()=>3)};
+renderStatic(); renderHouse();
+</script>
+
+</body></html>
